@@ -2,6 +2,7 @@
 name = "inta"
 version = "0.1.0"
 authors = ["Akihito KIRISAKI <kirisaki@klaraworks.net>"]
+license = "BSD-3-Clause"
 edition = "2018"
 
 description = "Interval arithmetic in Rust"
