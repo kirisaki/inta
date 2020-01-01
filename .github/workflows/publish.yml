@@ -1,0 +1,21 @@
+name: publish-inta
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build
+        run: cargo build --verbose
+      - name: Test
+        run: cargo test --verbose
+      - name: Login
+        run: cargo login ${{ secrets.CARGO_TOKEN }}
+      - name: Publish
+        run: cargo publish
