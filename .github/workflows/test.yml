@@ -1,0 +1,19 @@
+name: test-inta
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build
+        run: cargo build --verbose
+      - name: Test
+        run: cargo test --verbose
+      - name: Dry run publishing
+        run: cargo publish --dry-run
