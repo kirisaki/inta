@@ -1,6 +1,6 @@
 # inta
 
-Inteaval arithmetics in Rust.
+Interval arithmetics in Rust.
 
 
 ## License
