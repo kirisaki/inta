@@ -1,3 +1,7 @@
+// Copyright (c) 2013-2019 Masahide Kashiwagi
+// Released under the MIT license
+// https://github.com/mskashi/kv/blob/master/LICENSE.txt
+
 extern crate libc;
 
 use std::ptr;
