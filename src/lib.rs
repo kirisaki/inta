@@ -32,6 +32,23 @@ impl<F: Float> Interval<F> {
     pub fn to(self, y: F) -> Self {
         Self { inf: self.inf, sup: y }
     }
+    pub fn sqrt(self) -> Self {
+        if self.inf < Zero::zero() {
+            panic!("sqrt doesn't take negative number");
+        };
+        let mut inf = Zero::zero();
+        let p = &mut inf as *mut F;
+        let mut sup = Zero::zero();
+        let q = &mut sup as *mut F;
+        unsafe {
+            fesetround(FE_DOWNWARD);
+            ptr::write_volatile(p, self.inf.sqrt());
+            fesetround(FE_UPWARD);
+            ptr::write_volatile(q, self.sup.sqrt());
+            fesetround(FE_TONEAREST);
+        }
+        Self { inf, sup }
+    }
 }
 
 impl<F> ops::Add for Interval<F>
