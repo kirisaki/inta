@@ -6,6 +6,7 @@ extern crate libc;
 
 use std::ptr;
 use std::ops;
+use std::cmp::Ordering;
 use libc::c_int;
 use num_traits::float::Float;
 use num_traits::identities::Zero;
@@ -17,8 +18,6 @@ const FE_UPWARD:    c_int = 0x800;
 extern {
     fn fesetround(rdir: c_int) -> c_int;
 }
-
-
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Interval<F: Float> {
@@ -35,6 +34,17 @@ impl<F: Float> Interval<F> {
     }
     pub fn to(self, y: F) -> Self {
         Self { inf: self.inf, sup: y }
+    }
+    pub fn norm(self) -> F {
+        if self.inf >= F::zero() {
+            self.sup
+        } else if self.sup <= F::zero() {
+            -self.inf
+        } else if self.sup > -self.inf {
+            self.sup
+        } else {
+            -self.inf
+        }
     }
     pub fn sqrt(self) -> Self {
         if self.inf < Zero::zero() {
@@ -57,6 +67,73 @@ impl<F: Float> Interval<F> {
         let inf = if self.inf > other.inf { other.inf } else { self.inf };
         let sup = if self.sup < other.sup { other.sup } else { self.sup };
         Self { inf, sup }
+    }
+    fn exp_point(x: F) -> Self {
+        if x == F::infinity() {
+            return Self { inf: F::max_value(), sup: F::infinity() };
+        } else if x == - F::infinity() {
+            return Self { inf: F::zero(), sup: F::min_positive_value() };
+        };
+
+        let mut x_i;
+        let mut x_f;
+        if x.is_sign_positive() {
+            x_i = x.floor();
+            x_f = x - x_i;
+            if x_f >= F::one() / (F::one() + F::one()) {
+                x_f = x_f - F::one();
+                x_i = x_i + F::one();
+            }
+        } else {
+            x_i = -((-x).floor());
+            x_f = x - x_i;
+            if x_f <= - F::one() / (F::one() + F::one()) {
+                x_f = x_f + F::one();
+                x_i = x_i - F::one();
+            }
+        }
+
+        let mut r = Self::new(F::one());
+        let mut y = F::one();
+        let mut i = F::one();
+        let remainder = Interval {
+            inf: F::one()/(F::exp(F::one()).sqrt()),
+            sup: F::exp(F::one()).sqrt(),
+        };
+        loop {
+            y = y * x_f;
+            y = y / i;
+            if y * remainder.sup < F::epsilon(){
+                r = r + Self::new(y) * remainder;
+                break;
+            } else {
+                r = r + Self::new(y);
+            };
+            i = i + F::one();
+        };
+
+        if x_i.is_sign_positive() {
+            r = r * Self::new(x_i.exp());
+        } else {
+            r = r / Self::new((-x_i).exp());
+        }
+
+        r
+    }
+    pub fn exp(self) -> Self {
+        Self {
+            inf: Self::exp_point(self.inf).inf,
+            sup: Self::exp_point(self.sup).sup,
+        }
+    }
+}
+
+impl<F> PartialOrd for Interval<F>
+where
+    F: Float,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering>{
+        self.sup.partial_cmp(&other.inf)
     }
 }
 
@@ -286,6 +363,11 @@ mod tests {
         let b = Interval::from(-1.0).to(2.0);
         let c = Interval::from(-2.0).to(2.0);
         assert_eq!(a.hull(b), c);
-
+    }
+    #[test]
+    fn exp_interval() {
+        let expect = Interval::from((-1.0).exp()).to(1.0.exp());
+        let result = (Interval::from(-1.0).to(1.0)).exp();
+        assert_eq!(expect, result);
     }
 }
