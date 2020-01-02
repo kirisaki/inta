@@ -53,6 +53,11 @@ impl<F: Float> Interval<F> {
         }
         Self { inf, sup }
     }
+    pub fn hull(self, other: Self) -> Self {
+        let inf = if self.inf > other.inf { other.inf } else { self.inf };
+        let sup = if self.sup < other.sup { other.sup } else { self.sup };
+        Self { inf, sup }
+    }
 }
 
 impl<F> ops::Add for Interval<F>
@@ -274,5 +279,13 @@ mod tests {
         let a = Interval::from(-1.0).to(1.0);
         let b = Interval::from(-2.0).to(2.0);
         assert_eq!(a * b, b * a);
+    }
+    #[test]
+    fn hull_interval() {
+        let a = Interval::from(-2.0).to(1.0);
+        let b = Interval::from(-1.0).to(2.0);
+        let c = Interval::from(-2.0).to(2.0);
+        assert_eq!(a.hull(b), c);
+
     }
 }
