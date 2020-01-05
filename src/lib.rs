@@ -96,7 +96,7 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         Self{ inf, sup }
     }
     pub fn contains(self, other: Self) -> bool{
-        other.inf <= self.inf && self.sup <= other.sup
+        self.inf <= other.inf && other.sup <= self.sup
     }
     fn exp_point(x: F) -> Self {
         if x == F::infinity() {
@@ -320,39 +320,6 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
 
         r.intersect(Self{ inf: -f_1, sup: f_1 })
     }
-    pub fn cos(self) -> Self {
-        let f_0 = F::zero();
-        let f_1 = F::one();
-        let f_2 = f_1 + f_1;
-        let f_3 = f_2 + f_1;
-        let f_0_5 = f_1 / f_2;
-
-		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
-			      return Self{ inf: -f_1, sup: f_1 };
-		    };
-
-        let mut i = self;
-        let pi = Self::pi();
-        let pi2 = pi * Self::new(F::one() + F::one());
-
-		    while i.inf <= -pi.sup || i.inf >= pi.inf {
-			      let n = (i.inf / pi2.inf + f_0_5).floor();
-			      i = i -  Self::new(n) * pi2;
-		    };
-
-		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
-			      return Interval::from(-f_1).to(f_1);
-		    };
-
-        let mut r = Self::new(i.inf).cos_point().hull(Self::new(i.sup).cos_point());
-        if (Self::new(f_0)).contains(i) || (pi * Self::new(f_2)).contains(i) {
-            r = r.hull(Self::new(f_1));
-        } else if (-pi).contains(i) || pi.contains(i) || (pi * Self::new(f_3)).contains(i) {
-            r = r.hull(Self::new(-f_1));
-        };
-
-        r.intersect(Self{ inf: -f_1, sup: f_1 })
-    }
     fn cos_origin(self) -> Self {
         let mut r:Self = Self::new(F::one());
         let mut y:Self = Self::new(F::one());
@@ -406,6 +373,61 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
 			      Self::sin_origin(self - pi * Self::new(f_0_5))
 		    } else {
 		        Self::cos_origin(pi - self)
+        }
+    }
+    pub fn cos(self) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_2 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+			      return Self{ inf: -f_1, sup: f_1 };
+		    };
+
+        let mut i = self;
+        let pi = Self::pi();
+        let pi2 = pi * Self::new(F::one() + F::one());
+
+		    while i.inf <= -pi.sup || i.inf >= pi.inf {
+			      let n = (i.inf / pi2.inf + f_0_5).floor();
+			      i = i -  Self::new(n) * pi2;
+		    };
+
+		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
+			      return Interval::from(-f_1).to(f_1);
+		    };
+
+        let mut r = Self::new(i.inf).cos_point().hull(Self::new(i.sup).cos_point());
+        if (Self::new(f_0)).contains(i) || (pi * Self::new(f_2)).contains(i) {
+            r = r.hull(Self::new(f_1));
+        } else if (-pi).contains(i) || pi.contains(i) || (pi * Self::new(f_3)).contains(i) {
+            r = r.hull(Self::new(-f_1));
+        };
+
+        r.intersect(Self{ inf: -f_1, sup: f_1 })
+    }
+    fn tan_point(x: F) -> Self {
+        Self::sin_point(Self::new(x)) / Self::cos_point(Self::new(x))
+    }
+    pub fn tan(self) -> Self {
+		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+			      return Self::new(-F::infinity()).hull(Self::new(F::infinity()));
+		    };
+
+        let mut i = self;
+        let pi = Self::pi();
+        let pih = pi / Self::new(F::one() + F::one());
+		    while i.inf <= -pih.sup || i.inf >= pih.sup {
+			      let n = ((i.inf / pi.inf) + (F::one() / (F::one() + F::one()))).floor();
+			      i = i - Self::new(n) * pi;
+		    }
+
+		    if i.sup >= pih.sup {
+			      Self::from(-F::infinity()).to(F::infinity())
+		    } else {
+            Self::from(Self::tan_point(i.inf).inf).to(Self::tan_point(i.sup).sup)
         }
     }
     fn atan_origin(self) -> Self {
@@ -687,6 +709,7 @@ impl FloatExp for f32 {
 mod tests {
     use crate::*;
 
+
     #[test]
     fn add_interval() {
         let a = Interval::from(-1.0).to(1.0);
@@ -729,12 +752,24 @@ mod tests {
     fn log_interval() {
         let expect = Interval::from(2.0.ln()).to(3.0.ln());
         let result = (Interval::from(2.0).to(3.0)).ln();
-        assert!(expect.contains(result));
+        assert!(result.contains(expect));
     }
     #[test]
     fn sin_interval() {
-        let a = (Interval::from(0.0).to(3.14159265 / 4.0)).sin();
-        let b = Interval { inf: -0.0, sup: 0.7071067805519563 };
+        let a = (Interval::from(0.0).to(3.14 / 4.0)).sin();
+        let b = Interval { inf: -0.0, sup: 0.7068251811053664 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn cos_interval() {
+        let a = (Interval::from(3.14 / 4.0).to(3.14 / 2.0)).cos();
+        let b = Interval { inf: 0.000796326710730088, sup: 0.7073882691672001 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn cos_tan() {
+        let a = (Interval::from(3.14 / 12.0).to(3.14 / 6.0)).tan();
+        let b = Interval { inf: 0.26780694740780925, sup: 0.5769964003928736 };
         assert_eq!(a, b);
     }
 }
