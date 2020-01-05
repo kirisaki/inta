@@ -50,6 +50,15 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
             -self.inf
         }
     }
+    pub fn mid(self) -> F {
+        let f_1 = F::one();
+        let f_0_5 = f_1 / (f_1 + f_1);
+   		  if self.inf.abs() > f_1 && self.sup.abs() > f_1 {
+			      self.inf * f_0_5 + self.sup * f_0_5
+		    } else {
+			      (self.inf + self.sup) * f_0_5
+		    }
+    }
     pub fn sqrt(self) -> Self {
         if self.inf < Zero::zero() {
             panic!("sqrt doesn't take negative number");
@@ -71,6 +80,23 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let inf = if self.inf > other.inf { other.inf } else { self.inf };
         let sup = if self.sup < other.sup { other.sup } else { self.sup };
         Self { inf, sup }
+    }
+    pub fn intersect(self, other: Self) -> Self {
+		    let inf = if self.inf > other.inf{
+            self.inf
+        } else {
+		        other.inf
+        };
+        let sup = if self.sup < other.sup {
+            self.sup
+        } else {
+            other.sup
+        };
+
+        Self{ inf, sup }
+    }
+    pub fn contains(self, other: Self) -> bool{
+        other.inf <= self.inf && self.sup <= other.sup
     }
     fn exp_point(x: F) -> Self {
         if x == F::infinity() {
@@ -205,6 +231,216 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         ).to(
             Self::ln_point(self.sup, Round::Upward),
         )
+    }
+    fn sin_origin(self) -> Self {
+        let mut r:Self = Self::new(F::zero());
+        let mut y:Self = Self::new(F::one());
+        let mut i:F = F::one();
+        loop {
+            y = y * self;
+            y = y / Self::new(i);
+            if y.norm() < F::epsilon() {
+                r = r + y * Self::from(-F::one()).to(F::one());
+                break;
+            } else {
+                if i % (F::one() + F::one()) != F::zero() {
+                    if i % (F::one() + F::one() + F::one() + F::one()) == F::one() {
+                        r = r + y;
+                    } else {
+                        r = r - y;
+                    }
+                }
+            }
+            i = i + F::one()
+        }
+
+        r
+    }
+    fn sin_point(self) -> Self {
+		    let pi = Self::pi();
+		    let mpi = pi.mid();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_4 = f_2 + f_2;
+        let f_0_25 = f_1 / f_4;
+        let f_0_5 = f_1 / f_2;
+        let f_0_75 = f_3 / f_4;
+
+		    if self.inf >= mpi {
+			      (self - pi * Self::new(f_2)).sin_point()
+		    } else if self.sup <= -mpi * f_0_75 {
+			      -Self::sin_origin(self + pi)
+		    } else if self.sup <= -mpi * f_0_5 {
+			      -Self::cos_origin(-pi * Self::new(f_0_5) - self)
+		    } else if self.sup <= -mpi * f_0_25 {
+			      -Self::cos_origin(self + pi * Self::new(f_0_25))
+		    } else if self.sup <= F::zero() {
+			      -Self::sin_origin(-self)
+		    } else if self.sup <= mpi * f_0_25 {
+			      Self::sin_origin(self)
+		    } else if self.sup <= mpi * f_0_5 {
+			      Self::cos_origin(pi * Self::new(f_0_5) - self)
+		    } else if self.sup <= mpi * f_0_75 {
+			      Self::cos_origin(self - pi * Self::new(f_0_5))
+		    } else {
+		        Self::sin_origin(pi - self)
+        }
+    }
+    pub fn sin(self) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+        let f_1_5 = (f_1 + f_2) / f_2;
+        let f_2_5 = (f_1 + f_2+ f_2) / f_2;
+
+		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+			      return Self{ inf: -f_1, sup: f_1 };
+		    };
+
+        let mut i = self;
+        let pi = Self::pi();
+        let pi2 = pi * Self::new(F::one() + F::one());
+
+		    while i.inf <= -pi.sup || i.inf >= pi.inf {
+			      let n = (i.inf / pi2.inf + f_0_5).floor();
+			      i = i -  Self::new(n) * pi2;
+		    };
+
+		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
+			      return Interval::from(-f_1).to(f_1);
+		    };
+
+        let mut r = Self::new(i.inf).sin_point().hull(Self::new(i.sup).sin_point());
+        if (pi * Self::new(f_0_5)).contains(i) || (pi * Self::new(f_2_5)).contains(i) {
+            r = r.hull(Self::new(f_1));
+        } else if (pi * Self::new(f_0_5)).contains(i) || (pi * Self::new(f_1_5)).contains(i) {
+            r = r.hull(Self::new(-f_1));
+        };
+
+        r.intersect(Self{ inf: -f_1, sup: f_1 })
+    }
+    pub fn cos(self) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_2 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+			      return Self{ inf: -f_1, sup: f_1 };
+		    };
+
+        let mut i = self;
+        let pi = Self::pi();
+        let pi2 = pi * Self::new(F::one() + F::one());
+
+		    while i.inf <= -pi.sup || i.inf >= pi.inf {
+			      let n = (i.inf / pi2.inf + f_0_5).floor();
+			      i = i -  Self::new(n) * pi2;
+		    };
+
+		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
+			      return Interval::from(-f_1).to(f_1);
+		    };
+
+        let mut r = Self::new(i.inf).cos_point().hull(Self::new(i.sup).cos_point());
+        if (Self::new(f_0)).contains(i) || (pi * Self::new(f_2)).contains(i) {
+            r = r.hull(Self::new(f_1));
+        } else if (-pi).contains(i) || pi.contains(i) || (pi * Self::new(f_3)).contains(i) {
+            r = r.hull(Self::new(-f_1));
+        };
+
+        r.intersect(Self{ inf: -f_1, sup: f_1 })
+    }
+    fn cos_origin(self) -> Self {
+        let mut r:Self = Self::new(F::one());
+        let mut y:Self = Self::new(F::one());
+        let mut i:F = F::one();
+        loop {
+            y = y * self;
+            y = y / Self::new(i);
+            if y.norm() < F::epsilon() {
+                r = r + y * Self::from(-F::one()).to(F::one());
+                break;
+            } else {
+                if i % (F::one() + F::one()) == F::zero() {
+                    if i % (F::one() + F::one() + F::one() + F::one()) == F::zero() {
+                        r = r + y;
+                    } else {
+                        r = r - y;
+                    }
+                }
+            }
+            i = i + F::one()
+        }
+
+        r
+    }
+    fn cos_point(self) -> Self {
+		    let pi = Self::pi();
+		    let mpi = pi.mid();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_4 = f_2 + f_2;
+        let f_0_25 = f_1 / f_4;
+        let f_0_5 = f_1 / f_2;
+        let f_0_75 = f_3 / f_4;
+
+		    if self.inf >= mpi {
+			      (self - pi * Self::new(f_2)).cos_point()
+		    } else if self.sup <= -mpi * f_0_75 {
+			      -Self::cos_origin(self - pi)
+		    } else if self.sup <= -mpi * f_0_5 {
+			      -Self::sin_origin(-pi * Self::new(f_0_5) - self)
+		    } else if self.sup <= -mpi * f_0_25 {
+			      -Self::sin_origin(self + pi * Self::new(f_0_25))
+		    } else if self.sup <= F::zero() {
+			      -Self::cos_origin(-self)
+		    } else if self.sup <= mpi * f_0_25 {
+			      Self::cos_origin(self)
+		    } else if self.sup <= mpi * f_0_5 {
+			      Self::sin_origin(pi * Self::new(f_0_5) - self)
+		    } else if self.sup <= mpi * f_0_75 {
+			      Self::sin_origin(self - pi * Self::new(f_0_5))
+		    } else {
+		        Self::cos_origin(pi - self)
+        }
+    }
+    fn atan_origin(self) -> Self {
+        let mut r = Self::new(F::zero());
+        let mut y = Self::new(F::one());
+        let mut i = F::one();
+        loop {
+            y = y * self;
+            let tmp = y * Self::from(-F::one()).to(F::one()) / Self::new(i);
+            if tmp.norm() < F::epsilon() {
+                r = r + tmp;
+                break;
+            } else {
+                if i % (F::one() + F::one()) != F::zero() {
+                    if i % (F::one() + F::one() + F::one() + F::one()) == F::one() {
+                        r = r + y / Self::new(i)
+                    } else {
+                        r = r - y / Self::new(i)
+                    }
+                }
+            }
+            i = i + F::one();
+        }
+
+        r
+    }
+    pub fn pi() -> Self {
+        let f_1 = Self::new(F::one());
+        let f_2 = f_1 + f_1;
+        let f_4 = f_2 + f_2;
+        let f_5 = f_4 + f_1;
+        let f_16 = f_4 * f_4;
+        let f_239 = f_16 * f_16 - f_16 - f_1;
+
+        f_16 * (f_1 / f_5).atan_origin() - f_4 * (f_1 / f_239).atan_origin()
     }
 }
 
@@ -489,12 +725,16 @@ mod tests {
         let result = (Interval::from(-1.0).to(1.0)).exp();
         assert_eq!(expect, result);
     }
-    /*
     #[test]
     fn log_interval() {
         let expect = Interval::from(2.0.ln()).to(3.0.ln());
         let result = (Interval::from(2.0).to(3.0)).ln();
-        assert_eq!(expect, result);
+        assert!(expect.contains(result));
     }
-    */
+    #[test]
+    fn sin_interval() {
+        let a = (Interval::from(0.0).to(3.14159265 / 4.0)).sin();
+        let b = Interval { inf: -0.0, sup: 0.7071067805519563 };
+        assert_eq!(a, b);
+    }
 }
