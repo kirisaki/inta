@@ -454,6 +454,28 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
 
         r
     }
+    fn atan_point(x: F) -> Self {
+		    let  pi = Self::pi();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+        let f_0_25 = f_0_5 / f_2;
+
+		    if x < -(f_2.sqrt()) + f_1 {
+			      -pi * Self::new(f_0_5) - Self::atan_origin(Self::new(f_1) / Self::new(x))
+		    } else if x < f_2.sqrt() - f_1 {
+			      -pi * Self::new(f_0_25) + Self::atan_origin((Self::new(f_1) + Self::new(x))/(Self::new(f_1) - Self::new(x)))
+		    } else if x < f_2.sqrt() - f_1 {
+			      Self::atan_origin(Self::new(x))
+		    } else if x < f_2.sqrt() + f_1 {
+			      pi * Self::new(f_0_25) + Self::atan_origin((Self::new(x) - Self::new(f_1))/(Self::new(x) + Self::new(f_1)))
+		    } else {
+            pi * Self::new(f_0_5) - Self::atan_origin(Self::new(f_1) / Self::new(x))
+        }
+	  }
+	  pub fn atan(self) -> Self {
+		    Self { inf: Self::atan_point(self.inf).inf, sup: Self::atan_point(self.sup).sup }
+	  }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
