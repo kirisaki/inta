@@ -476,6 +476,32 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
 	  pub fn atan(self) -> Self {
 		    Self { inf: Self::atan_point(self.inf).inf, sup: Self::atan_point(self.sup).sup }
 	  }
+    fn asin_point(x: F) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_6 = f_3 + f_3;
+        let f_0_5 = f_1 / f_2;
+        let pih = Self::pi() * Self::new(f_0_5);
+
+        if x.abs() > f_1 {
+            panic!("abs of asin less than 1.0");
+        }
+        if x == f_1 {
+            return pih
+        } else if x == -f_1 {
+            return -pih
+        }
+
+        if x.abs() < f_6.sqrt() / f_3 {
+            (Self::new(x) / (Self::new(f_1) - Self::new(x) *  Self::new(x)).sqrt()).atan()
+        } else {
+            (Self::new(x) / ((Self::new(f_1) + Self::new(x)) * (Self::new(f_1) - Self::new(x))).sqrt()).atan()
+        }
+    }
+    pub fn asin(self) -> Self {
+        Self::from(Self::asin_point(self.inf).inf).to(Self::asin_point(self.sup).sup)
+    }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
