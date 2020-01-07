@@ -436,7 +436,7 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let mut i = F::one();
         loop {
             y = y * self;
-            let tmp = y * Self::from(-F::one()).to(F::one()) / Self::new(i);
+            let tmp = y * (Self::from(-F::one()).to(F::one())) / Self::new(i);
             if tmp.norm() < F::epsilon() {
                 r = r + tmp;
                 break;
@@ -461,16 +461,16 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_0_5 = f_1 / f_2;
         let f_0_25 = f_0_5 / f_2;
 
-		    if x < -(f_2.sqrt()) + f_1 {
-			      -pi * Self::new(f_0_5) - Self::atan_origin(Self::new(f_1) / Self::new(x))
+		    if x < -(f_2.sqrt() + f_1) {
+			      -pi * Self::new(f_0_5) - (Self::new(f_1) / Self::new(x)).atan_origin()
+		    } else if x < -(f_2.sqrt() - f_1) {
+			      -pi * Self::new(f_0_25) + ((Self::new(f_1) + Self::new(x))/(Self::new(f_1) - Self::new(x))).atan_origin()
 		    } else if x < f_2.sqrt() - f_1 {
-			      -pi * Self::new(f_0_25) + Self::atan_origin((Self::new(f_1) + Self::new(x))/(Self::new(f_1) - Self::new(x)))
-		    } else if x < f_2.sqrt() - f_1 {
-			      Self::atan_origin(Self::new(x))
+			      Self::new(x).atan_origin()
 		    } else if x < f_2.sqrt() + f_1 {
-			      pi * Self::new(f_0_25) + Self::atan_origin((Self::new(x) - Self::new(f_1))/(Self::new(x) + Self::new(f_1)))
+			      pi * Self::new(f_0_25) + ((Self::new(x) - Self::new(f_1))/(Self::new(x) + Self::new(f_1))).atan_origin()
 		    } else {
-            pi * Self::new(f_0_5) - Self::atan_origin(Self::new(f_1) / Self::new(x))
+            pi * Self::new(f_0_5) - (Self::new(f_1) / Self::new(x)).atan_origin()
         }
 	  }
 	  pub fn atan(self) -> Self {
@@ -502,6 +502,54 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     pub fn asin(self) -> Self {
         Self::from(Self::asin_point(self.inf).inf).to(Self::asin_point(self.sup).sup)
     }
+    fn pih_m_atan_point(self) -> Self {
+		    let pi = Self::pi();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_4 = f_2 + f_2;
+        let f_0_25 = f_1 / f_4;
+        let f_0_5 = f_1 / f_2;
+        let f_0_75 = f_3 / f_4;
+
+		    if self.inf < -(f_2.sqrt() + f_1) {
+			      pi + (Self::new(f_1) / self).atan_origin()
+		    } else if self.inf < -(f_2.sqrt() - f_1) {
+			      pi * Self::new(f_0_75) - ((Self::new(f_1) + self)/(Self::new(f_1) - self)).atan_origin()
+		    } else if self.inf < f_2.sqrt() - f_1 {
+			      pi * Self::new(f_0_5) - self.atan_origin()
+		    } else if self.inf < f_2.sqrt() + f_1 {
+			      pi * Self::new(f_0_25) - ((self - Self::new(f_1))/(self + Self::new(f_1))).atan_origin()
+		    } else {
+		        (Self::new(f_1) / self).atan_origin()
+        }
+	  }
+    fn acos_point(x: F) -> Self {
+		    let pi = Self::pi();
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_6 = f_3 + f_3;
+
+		    if x.abs() > f_1 {
+            panic!("abs of acos less than 1.0");
+		    }
+		    if x == f_1 {
+            return Self::new(f_0);
+        } else if x == -f_1 {
+            return pi;
+        }
+
+		    if x.abs() < f_6.sqrt() / f_3 {
+			      (Self::new(x) / (Self::new(f_1) - Self::new(x) * Self::new(x)).sqrt()).pih_m_atan_point()
+		    } else {
+            (Self::new(x) / ((Self::new(f_1) + Self::new(x)) * (Self::new(f_1) - Self::new(x))).sqrt()).pih_m_atan_point()
+		    }
+	  }
+    pub fn acos(self) -> Self {
+		    Self::from(Self::acos_point(self.sup).inf).to(Self::acos_point(self.inf).sup)
+	  }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
@@ -815,9 +863,27 @@ mod tests {
         assert_eq!(a, b);
     }
     #[test]
-    fn cos_tan() {
+    fn tan_interval() {
         let a = (Interval::from(3.14 / 12.0).to(3.14 / 6.0)).tan();
         let b = Interval { inf: 0.26780694740780925, sup: 0.5769964003928736 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn atan_interval() {
+        let a = (Interval::from(3.14 / 4.0).to(3.14 / 2.0)).atan();
+        let b = Interval { inf: 0.6655274437255011, sup: 1.0036550779803282 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn asin_interval() {
+        let a = (Interval::from(-0.5).to(0.5)).asin();
+        let b = Interval { inf: -0.5235987755983003, sup: 0.5235987755983001 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn acos_interval() {
+        let a = (Interval::from(0.0).to(0.5)).acos();
+        let b = Interval { inf: 1.0471975511965956, sup: 1.5707963267948977 };
         assert_eq!(a, b);
     }
 }
