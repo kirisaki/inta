@@ -560,6 +560,34 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
 
         f_16 * (f_1 / f_5).atan_origin() - f_4 * (f_1 / f_239).atan_origin()
     }
+    pub fn e() -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_4 = f_2 + f_2;
+        let f_6 = f_2 + f_4;
+        let f_10 = f_6 + f_4;
+        let f_14 = f_10 + f_4;
+        let f_18 = f_14 + f_4;
+        let f_22 = f_18 + f_4;
+        let e = f_1 + f_2 / (f_1 + f_1 / (f_6 + f_1 / ( f_10 + f_1 / (f_14 + f_1 / (f_18 + f_1 / (f_22))))));
+
+		    let mut tmp = Self::new(f_1);
+		    let remainder = Self::from(f_1).to(e);
+		    let mut y = Self::new(f_1);
+		    let mut i = f_1;
+		    loop {
+			      y = y / Self::new(i);
+			      if y.norm() * remainder.sup < F::epsilon() {
+				        tmp = tmp +  y * remainder;
+				        break;
+			      } else {
+				        tmp = tmp + y;
+			      }
+            i = i + f_1;
+		    }
+
+		    tmp
+	  }
 }
 
 enum Round {
@@ -843,6 +871,12 @@ mod tests {
         let expect = Interval::from((-1.0).exp()).to(1.0.exp());
         let result = (Interval::from(-1.0).to(1.0)).exp();
         assert_eq!(expect, result);
+    }
+    #[test]
+    fn e_interval() {
+        let expect = Interval::new(std::f64::consts::E);
+        let result = Interval::e();
+        assert!(result.contains(expect));
     }
     #[test]
     fn log_interval() {
