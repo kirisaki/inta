@@ -701,6 +701,30 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     pub fn asinh(self) -> Self {
         Self::from(Self::asinh_point(self.inf).inf).to(Self::asinh_point(self.sup).sup)
     }
+    fn acosh_point(x: F) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+        let f_1_5 = f_3 / f_2;
+
+        if x < f_1 {
+            panic!("the domain of acosh is greater than 1");
+        }
+
+        if x == f_1 {
+            Self::new(f_0)
+        } else if x <= f_1_5 {
+            let y = Self::new(x - f_1);
+            (y + (y * (Self::new(x) + Self::new(f_1)))).ln1p()
+        } else {
+            (Self::new(x) + (Self::new(x) * Self::new(x) - Self::new(f_1)).sqrt()).ln()
+        }
+    }
+    pub fn acosh(self) -> Self {
+        Self::from(Self::acosh_point(self.inf).inf).to(Self::acosh_point(self.sup).sup)
+    }
+
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
@@ -1093,6 +1117,12 @@ mod tests {
     fn asinh_interval() {
         let a = (Interval::from(0.0).to(0.5)).asinh();
         let b = Interval { inf: 0.0, sup: 0.48121182505960375 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn acosh_interval() {
+        let a = (Interval::from(1.0).to(25.0)).acosh();
+        let b = Interval { inf: 0.0, sup: 3.911622765214589 };
         assert_eq!(a, b);
     }
 }
