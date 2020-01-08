@@ -232,6 +232,56 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
             Self::ln_point(self.sup, Round::Upward),
         )
     }
+    fn ln1p_origin(self) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+
+        let cinv = Self::new(f_1) / (self + Self::new(f_1)).hull(Self::new(f_1));
+        let mut r = Self::new(f_0);
+        let mut xn = -Self::new(f_1);
+        let mut xn2 = -Self::new(f_1);
+        let mut i = f_1;
+        loop {
+            xn = -xn * self;
+            xn2 = -xn2 * cinv * self;
+            let tmp = xn2 / Self::new(i);
+            if tmp.norm() < F::epsilon() {
+                r += xn2 / Self::new(i);
+                break;
+            } else {
+                r += xn / Self::new(i);
+            }
+        }
+        
+        r
+    }
+
+    fn ln1p_point(x: F, round: Round) -> F {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_3 = f_1 + f_2;
+
+        if x >= -(f_3 - f_2 * f_2.sqrt()) && x <= f_3 - f_2 * f_2.sqrt() {
+            let tmp = Self::ln1p_origin(Self::new(x));
+            match round {
+                Round::Downward => tmp.inf,
+                Round::Upward => tmp.sup,
+            }
+        } else {
+            let tmp = Self::new(x) + Self::new(f_1);
+            match round {
+                Round::Downward => Self::ln_point(tmp.inf, Round::Downward),
+                Round::Upward => Self::ln_point(tmp.sup, Round::Upward),
+            }
+        }
+    }
+    pub fn ln1p(self) -> Self{
+        let f_1 = F::one();
+        if self.inf < -f_1 {
+            panic!("ln1p dosen't take negative value");
+        }
+        Self::from(Self::ln1p_point(self.inf, Round::Downward)).to(Self::ln1p_point(self.sup, Round::Upward))
+  }
     fn sin_origin(self) -> Self {
         let mut r:Self = Self::new(F::zero());
         let mut y:Self = Self::new(F::one());
@@ -635,6 +685,22 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     pub fn tanh(self) -> Self {
         Self::from(Self::tanh_point(self.inf).inf).to(Self::tanh_point(self.sup).sup)
     }
+    fn asinh_point(x: F) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+        if x < -f_0_5 {
+            -(-Self::new(x) + (Self::new(f_1) + Self::new(x) * Self::new(x)).sqrt()).ln()
+        } else if x <= f_0_5 {
+            ((Self::new(f_1) + Self::new(x) / (Self::new(f_1) + (Self::new(f_1) + Self::new(x) * Self::new(x)).sqrt())) * Self::new(x)).ln1p()
+        } else {
+            (Self::new(x) + (Self::new(f_1) + Self::new(x) * Self::new(x)).sqrt()).ln()
+        }
+    }
+    pub fn asinh(self) -> Self {
+        Self::from(Self::asinh_point(self.inf).inf).to(Self::asinh_point(self.sup).sup)
+    }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
@@ -1021,6 +1087,12 @@ mod tests {
     fn tanh_interval() {
         let a = (Interval::from(0.0).to(0.5)).tanh();
         let b = Interval { inf: -0.0, sup: 1.0365493286721292 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn asinh_interval() {
+        let a = (Interval::from(0.0).to(0.5)).asinh();
+        let b = Interval { inf: 0.0, sup: 0.48121182505960375 };
         assert_eq!(a, b);
     }
 }
