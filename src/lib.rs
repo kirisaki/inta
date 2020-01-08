@@ -579,13 +579,14 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         r
     }
     fn sinh_point(x: F) -> Self {
+        let f_0 = F::zero();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_0_5 = f_1 / f_2;
 
         if -f_0_5 <= x && x <= f_0_5 {
             Self::sinh_origin(Self::new(x))
-        } else if x.is_sign_positive() {
+        } else if x < f_0 {
             let tmp = Self::exp_point(x);
             (tmp - Self::new(f_1) / tmp) * Self::new(f_0_5)
         } else {
@@ -595,6 +596,44 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     }
     pub fn sinh(self) -> Self {
         Self::from(Self::sinh_point(self.inf).inf).to(Self::sinh_point(self.sup).sup)
+    }
+    fn cosh_point(x: F) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+        if x >= f_0 {
+            let tmp = Self::exp_point(x);
+            (tmp + Self::new(f_1) / tmp) * Self::new(f_0_5)
+        } else {
+            let tmp = Self::exp_point(-x);
+            (Self::new(f_1) / tmp + tmp) * Self::new(f_0_5)
+        }
+    }
+
+    pub fn cosh(self) -> Self {
+        let mut r = Self::cosh_point(self.inf).hull(Self::cosh_point(self.sup));
+        if self.contains(Self::new(F::zero())) {
+            r = r.hull(Self::new(F::one()));
+        }
+        r
+    }
+    fn tanh_point(x: F) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+        if x > f_0_5 {
+            Self::new(f_1) - Self::new(f_2) + Self::exp_point(f_2 * x)
+        } else if x < -f_0_5 {
+            Self::new(f_2) / (Self::new(f_1) + Self::exp_point(-f_2 * x)) - Self::new(f_1)
+        } else {
+            (Self::new(x)).sinh_origin() / Self::cosh_point(x)
+        }
+    }
+    pub fn tanh(self) -> Self {
+        Self::from(Self::tanh_point(self.inf).inf).to(Self::tanh_point(self.sup).sup)
     }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
@@ -970,6 +1009,18 @@ mod tests {
     fn sinh_interval() {
         let a = (Interval::from(0.0).to(0.5)).sinh();
         let b = Interval { inf: -0.0, sup: 0.5210953054937478 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn cosh_interval() {
+        let a = (Interval::from(0.0).to(0.5)).cosh();
+        let b = Interval { inf: 0.5027211837195406, sup: 1.9942185444087692 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn tanh_interval() {
+        let a = (Interval::from(0.0).to(0.5)).tanh();
+        let b = Interval { inf: -0.0, sup: 1.0365493286721292 };
         assert_eq!(a, b);
     }
 }
