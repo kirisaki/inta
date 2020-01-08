@@ -53,11 +53,11 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     pub fn mid(self) -> F {
         let f_1 = F::one();
         let f_0_5 = f_1 / (f_1 + f_1);
-   		  if self.inf.abs() > f_1 && self.sup.abs() > f_1 {
-			      self.inf * f_0_5 + self.sup * f_0_5
-		    } else {
-			      (self.inf + self.sup) * f_0_5
-		    }
+         if self.inf.abs() > f_1 && self.sup.abs() > f_1 {
+            self.inf * f_0_5 + self.sup * f_0_5
+        } else {
+            (self.inf + self.sup) * f_0_5
+        }
     }
     pub fn sqrt(self) -> Self {
         if self.inf < Zero::zero() {
@@ -82,10 +82,10 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         Self { inf, sup }
     }
     pub fn intersect(self, other: Self) -> Self {
-		    let inf = if self.inf > other.inf{
+        let inf = if self.inf > other.inf{
             self.inf
         } else {
-		        other.inf
+            other.inf
         };
         let sup = if self.sup < other.sup {
             self.sup
@@ -257,8 +257,8 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         r
     }
     fn sin_point(self) -> Self {
-		    let pi = Self::pi();
-		    let mpi = pi.mid();
+        let pi = Self::pi();
+        let mpi = pi.mid();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_3 = f_1 + f_2;
@@ -267,24 +267,24 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_0_5 = f_1 / f_2;
         let f_0_75 = f_3 / f_4;
 
-		    if self.inf >= mpi {
-			      (self - pi * Self::new(f_2)).sin_point()
-		    } else if self.sup <= -mpi * f_0_75 {
-			      -Self::sin_origin(self + pi)
-		    } else if self.sup <= -mpi * f_0_5 {
-			      -Self::cos_origin(-pi * Self::new(f_0_5) - self)
-		    } else if self.sup <= -mpi * f_0_25 {
-			      -Self::cos_origin(self + pi * Self::new(f_0_25))
-		    } else if self.sup <= F::zero() {
-			      -Self::sin_origin(-self)
-		    } else if self.sup <= mpi * f_0_25 {
-			      Self::sin_origin(self)
-		    } else if self.sup <= mpi * f_0_5 {
-			      Self::cos_origin(pi * Self::new(f_0_5) - self)
-		    } else if self.sup <= mpi * f_0_75 {
-			      Self::cos_origin(self - pi * Self::new(f_0_5))
-		    } else {
-		        Self::sin_origin(pi - self)
+        if self.inf >= mpi {
+            (self - pi * Self::new(f_2)).sin_point()
+        } else if self.sup <= -mpi * f_0_75 {
+            -Self::sin_origin(self + pi)
+        } else if self.sup <= -mpi * f_0_5 {
+            -Self::cos_origin(-pi * Self::new(f_0_5) - self)
+        } else if self.sup <= -mpi * f_0_25 {
+            -Self::cos_origin(self + pi * Self::new(f_0_25))
+        } else if self.sup <= F::zero() {
+            -Self::sin_origin(-self)
+        } else if self.sup <= mpi * f_0_25 {
+            Self::sin_origin(self)
+        } else if self.sup <= mpi * f_0_5 {
+            Self::cos_origin(pi * Self::new(f_0_5) - self)
+        } else if self.sup <= mpi * f_0_75 {
+            Self::cos_origin(self - pi * Self::new(f_0_5))
+        } else {
+            Self::sin_origin(pi - self)
         }
     }
     pub fn sin(self) -> Self {
@@ -294,22 +294,22 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_1_5 = (f_1 + f_2) / f_2;
         let f_2_5 = (f_1 + f_2+ f_2) / f_2;
 
-		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
-			      return Self{ inf: -f_1, sup: f_1 };
-		    };
+        if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+            return Self{ inf: -f_1, sup: f_1 };
+        };
 
         let mut i = self;
         let pi = Self::pi();
         let pi2 = pi * Self::new(F::one() + F::one());
 
-		    while i.inf <= -pi.sup || i.inf >= pi.inf {
-			      let n = (i.inf / pi2.inf + f_0_5).floor();
-			      i = i -  Self::new(n) * pi2;
-		    };
+        while i.inf <= -pi.sup || i.inf >= pi.inf {
+            let n = (i.inf / pi2.inf + f_0_5).floor();
+            i = i -  Self::new(n) * pi2;
+        };
 
-		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
-			      return Interval::from(-f_1).to(f_1);
-		    };
+        if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
+            return Interval::from(-f_1).to(f_1);
+        };
 
         let mut r = Self::new(i.inf).sin_point().hull(Self::new(i.sup).sin_point());
         if (pi * Self::new(f_0_5)).contains(i) || (pi * Self::new(f_2_5)).contains(i) {
@@ -345,8 +345,8 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         r
     }
     fn cos_point(self) -> Self {
-		    let pi = Self::pi();
-		    let mpi = pi.mid();
+        let pi = Self::pi();
+        let mpi = pi.mid();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_3 = f_1 + f_2;
@@ -355,24 +355,24 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_0_5 = f_1 / f_2;
         let f_0_75 = f_3 / f_4;
 
-		    if self.inf >= mpi {
-			      (self - pi * Self::new(f_2)).cos_point()
-		    } else if self.sup <= -mpi * f_0_75 {
-			      -Self::cos_origin(self - pi)
-		    } else if self.sup <= -mpi * f_0_5 {
-			      -Self::sin_origin(-pi * Self::new(f_0_5) - self)
-		    } else if self.sup <= -mpi * f_0_25 {
-			      -Self::sin_origin(self + pi * Self::new(f_0_25))
-		    } else if self.sup <= F::zero() {
-			      -Self::cos_origin(-self)
-		    } else if self.sup <= mpi * f_0_25 {
-			      Self::cos_origin(self)
-		    } else if self.sup <= mpi * f_0_5 {
-			      Self::sin_origin(pi * Self::new(f_0_5) - self)
-		    } else if self.sup <= mpi * f_0_75 {
-			      Self::sin_origin(self - pi * Self::new(f_0_5))
-		    } else {
-		        Self::cos_origin(pi - self)
+        if self.inf >= mpi {
+            (self - pi * Self::new(f_2)).cos_point()
+        } else if self.sup <= -mpi * f_0_75 {
+            -Self::cos_origin(self - pi)
+        } else if self.sup <= -mpi * f_0_5 {
+            -Self::sin_origin(-pi * Self::new(f_0_5) - self)
+        } else if self.sup <= -mpi * f_0_25 {
+            -Self::sin_origin(self + pi * Self::new(f_0_25))
+        } else if self.sup <= F::zero() {
+            -Self::cos_origin(-self)
+        } else if self.sup <= mpi * f_0_25 {
+            Self::cos_origin(self)
+        } else if self.sup <= mpi * f_0_5 {
+            Self::sin_origin(pi * Self::new(f_0_5) - self)
+        } else if self.sup <= mpi * f_0_75 {
+            Self::sin_origin(self - pi * Self::new(f_0_5))
+        } else {
+            Self::cos_origin(pi - self)
         }
     }
     pub fn cos(self) -> Self {
@@ -382,22 +382,22 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_3 = f_2 + f_1;
         let f_0_5 = f_1 / f_2;
 
-		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
-			      return Self{ inf: -f_1, sup: f_1 };
-		    };
+        if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+            return Self{ inf: -f_1, sup: f_1 };
+        };
 
         let mut i = self;
         let pi = Self::pi();
         let pi2 = pi * Self::new(F::one() + F::one());
 
-		    while i.inf <= -pi.sup || i.inf >= pi.inf {
-			      let n = (i.inf / pi2.inf + f_0_5).floor();
-			      i = i -  Self::new(n) * pi2;
-		    };
+        while i.inf <= -pi.sup || i.inf >= pi.inf {
+            let n = (i.inf / pi2.inf + f_0_5).floor();
+            i = i -  Self::new(n) * pi2;
+        };
 
-		    if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
-			      return Interval::from(-f_1).to(f_1);
-		    };
+        if (Self::new(i.sup) - Self::new(i.inf)).inf >= pi2.sup {
+            return Interval::from(-f_1).to(f_1);
+        };
 
         let mut r = Self::new(i.inf).cos_point().hull(Self::new(i.sup).cos_point());
         if (Self::new(f_0)).contains(i) || (pi * Self::new(f_2)).contains(i) {
@@ -412,21 +412,21 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         Self::sin_point(Self::new(x)) / Self::cos_point(Self::new(x))
     }
     pub fn tan(self) -> Self {
-		    if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
-			      return Self::new(-F::infinity()).hull(Self::new(F::infinity()));
-		    };
+        if self.inf.abs() == F::infinity() || self.sup.abs() == F::infinity() {
+            return Self::new(-F::infinity()).hull(Self::new(F::infinity()));
+        };
 
         let mut i = self;
         let pi = Self::pi();
         let pih = pi / Self::new(F::one() + F::one());
-		    while i.inf <= -pih.sup || i.inf >= pih.sup {
-			      let n = ((i.inf / pi.inf) + (F::one() / (F::one() + F::one()))).floor();
-			      i = i - Self::new(n) * pi;
-		    }
+        while i.inf <= -pih.sup || i.inf >= pih.sup {
+            let n = ((i.inf / pi.inf) + (F::one() / (F::one() + F::one()))).floor();
+            i = i - Self::new(n) * pi;
+        }
 
-		    if i.sup >= pih.sup {
-			      Self::from(-F::infinity()).to(F::infinity())
-		    } else {
+        if i.sup >= pih.sup {
+            Self::from(-F::infinity()).to(F::infinity())
+        } else {
             Self::from(Self::tan_point(i.inf).inf).to(Self::tan_point(i.sup).sup)
         }
     }
@@ -455,27 +455,27 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         r
     }
     fn atan_point(x: F) -> Self {
-		    let  pi = Self::pi();
+        let  pi = Self::pi();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_0_5 = f_1 / f_2;
         let f_0_25 = f_0_5 / f_2;
 
-		    if x < -(f_2.sqrt() + f_1) {
-			      -pi * Self::new(f_0_5) - (Self::new(f_1) / Self::new(x)).atan_origin()
-		    } else if x < -(f_2.sqrt() - f_1) {
-			      -pi * Self::new(f_0_25) + ((Self::new(f_1) + Self::new(x))/(Self::new(f_1) - Self::new(x))).atan_origin()
-		    } else if x < f_2.sqrt() - f_1 {
-			      Self::new(x).atan_origin()
-		    } else if x < f_2.sqrt() + f_1 {
-			      pi * Self::new(f_0_25) + ((Self::new(x) - Self::new(f_1))/(Self::new(x) + Self::new(f_1))).atan_origin()
-		    } else {
+        if x < -(f_2.sqrt() + f_1) {
+            -pi * Self::new(f_0_5) - (Self::new(f_1) / Self::new(x)).atan_origin()
+        } else if x < -(f_2.sqrt() - f_1) {
+            -pi * Self::new(f_0_25) + ((Self::new(f_1) + Self::new(x))/(Self::new(f_1) - Self::new(x))).atan_origin()
+        } else if x < f_2.sqrt() - f_1 {
+            Self::new(x).atan_origin()
+        } else if x < f_2.sqrt() + f_1 {
+            pi * Self::new(f_0_25) + ((Self::new(x) - Self::new(f_1))/(Self::new(x) + Self::new(f_1))).atan_origin()
+        } else {
             pi * Self::new(f_0_5) - (Self::new(f_1) / Self::new(x)).atan_origin()
         }
-	  }
-	  pub fn atan(self) -> Self {
-		    Self { inf: Self::atan_point(self.inf).inf, sup: Self::atan_point(self.sup).sup }
-	  }
+    }
+    pub fn atan(self) -> Self {
+        Self { inf: Self::atan_point(self.inf).inf, sup: Self::atan_point(self.sup).sup }
+    }
     fn asin_point(x: F) -> Self {
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
@@ -503,7 +503,7 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         Self::from(Self::asin_point(self.inf).inf).to(Self::asin_point(self.sup).sup)
     }
     fn pih_m_atan_point(self) -> Self {
-		    let pi = Self::pi();
+        let pi = Self::pi();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_3 = f_1 + f_2;
@@ -512,44 +512,90 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_0_5 = f_1 / f_2;
         let f_0_75 = f_3 / f_4;
 
-		    if self.inf < -(f_2.sqrt() + f_1) {
-			      pi + (Self::new(f_1) / self).atan_origin()
-		    } else if self.inf < -(f_2.sqrt() - f_1) {
-			      pi * Self::new(f_0_75) - ((Self::new(f_1) + self)/(Self::new(f_1) - self)).atan_origin()
-		    } else if self.inf < f_2.sqrt() - f_1 {
-			      pi * Self::new(f_0_5) - self.atan_origin()
-		    } else if self.inf < f_2.sqrt() + f_1 {
-			      pi * Self::new(f_0_25) - ((self - Self::new(f_1))/(self + Self::new(f_1))).atan_origin()
-		    } else {
-		        (Self::new(f_1) / self).atan_origin()
+        if self.inf < -(f_2.sqrt() + f_1) {
+            pi + (Self::new(f_1) / self).atan_origin()
+        } else if self.inf < -(f_2.sqrt() - f_1) {
+            pi * Self::new(f_0_75) - ((Self::new(f_1) + self)/(Self::new(f_1) - self)).atan_origin()
+        } else if self.inf < f_2.sqrt() - f_1 {
+            pi * Self::new(f_0_5) - self.atan_origin()
+        } else if self.inf < f_2.sqrt() + f_1 {
+            pi * Self::new(f_0_25) - ((self - Self::new(f_1))/(self + Self::new(f_1))).atan_origin()
+        } else {
+            (Self::new(f_1) / self).atan_origin()
         }
-	  }
+    }
     fn acos_point(x: F) -> Self {
-		    let pi = Self::pi();
+        let pi = Self::pi();
         let f_0 = F::zero();
         let f_1 = F::one();
         let f_2 = f_1 + f_1;
         let f_3 = f_1 + f_2;
         let f_6 = f_3 + f_3;
 
-		    if x.abs() > f_1 {
+        if x.abs() > f_1 {
             panic!("abs of acos less than 1.0");
-		    }
-		    if x == f_1 {
+        }
+        if x == f_1 {
             return Self::new(f_0);
         } else if x == -f_1 {
             return pi;
         }
 
-		    if x.abs() < f_6.sqrt() / f_3 {
-			      (Self::new(x) / (Self::new(f_1) - Self::new(x) * Self::new(x)).sqrt()).pih_m_atan_point()
-		    } else {
+        if x.abs() < f_6.sqrt() / f_3 {
+            (Self::new(x) / (Self::new(f_1) - Self::new(x) * Self::new(x)).sqrt()).pih_m_atan_point()
+        } else {
             (Self::new(x) / ((Self::new(f_1) + Self::new(x)) * (Self::new(f_1) - Self::new(x))).sqrt()).pih_m_atan_point()
-		    }
-	  }
+        }
+    }
     pub fn acos(self) -> Self {
-		    Self::from(Self::acos_point(self.sup).inf).to(Self::acos_point(self.inf).sup)
-	  }
+        Self::from(Self::acos_point(self.sup).inf).to(Self::acos_point(self.inf).sup)
+    }
+    fn sinh_origin(self) -> Self {
+        let f_0 = F::zero();
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+        let expsq = Self::e().sqrt();
+        let coshh = (expsq + Self::new(f_1) / expsq) * Self::new(f_0_5);
+        
+        let mut r = Self::new(f_0);
+        let mut y = Self::new(f_1);
+        let mut i = f_1;
+        loop {
+            y = y * self;
+            y = y / Self::new(i);
+            let tmp = y * Self::from(-coshh.inf).to(coshh.sup);
+            if tmp.norm() < F::epsilon() {
+                r = r + tmp;
+                break;
+            } else {
+                if i % f_2 != f_0 {
+                    r = r + y;
+                }
+            }
+            i = i + f_1;
+        }
+
+        r
+    }
+    fn sinh_point(x: F) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
+
+        if -f_0_5 <= x && x <= f_0_5 {
+            Self::sinh_origin(Self::new(x))
+        } else if x.is_sign_positive() {
+            let tmp = Self::exp_point(x);
+            (tmp - Self::new(f_1) / tmp) * Self::new(f_0_5)
+        } else {
+            let tmp = Self::exp_point(-x);
+            (Self::new(f_1) / tmp - tmp) * Self::new(f_0_5)
+        }
+    }
+    pub fn sinh(self) -> Self {
+        Self::from(Self::sinh_point(self.inf).inf).to(Self::sinh_point(self.sup).sup)
+    }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
@@ -571,23 +617,23 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
         let f_22 = f_18 + f_4;
         let e = f_1 + f_2 / (f_1 + f_1 / (f_6 + f_1 / ( f_10 + f_1 / (f_14 + f_1 / (f_18 + f_1 / (f_22))))));
 
-		    let mut tmp = Self::new(f_1);
-		    let remainder = Self::from(f_1).to(e);
-		    let mut y = Self::new(f_1);
-		    let mut i = f_1;
-		    loop {
-			      y = y / Self::new(i);
-			      if y.norm() * remainder.sup < F::epsilon() {
-				        tmp = tmp +  y * remainder;
-				        break;
-			      } else {
-				        tmp = tmp + y;
-			      }
+        let mut tmp = Self::new(f_1);
+        let remainder = Self::from(f_1).to(e);
+        let mut y = Self::new(f_1);
+        let mut i = f_1;
+        loop {
+            y = y / Self::new(i);
+            if y.norm() * remainder.sup < F::epsilon() {
+                tmp = tmp +  y * remainder;
+                break;
+            } else {
+                tmp = tmp + y;
+            }
             i = i + f_1;
-		    }
+        }
 
-		    tmp
-	  }
+        tmp
+    }
 }
 
 enum Round {
@@ -918,6 +964,12 @@ mod tests {
     fn acos_interval() {
         let a = (Interval::from(0.0).to(0.5)).acos();
         let b = Interval { inf: 1.0471975511965956, sup: 1.5707963267948977 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn sinh_interval() {
+        let a = (Interval::from(0.0).to(0.5)).sinh();
+        let b = Interval { inf: -0.0, sup: 0.5210953054937478 };
         assert_eq!(a, b);
     }
 }
