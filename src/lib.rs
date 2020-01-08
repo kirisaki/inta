@@ -724,7 +724,29 @@ impl<F: Float + FloatExp + Debug> Interval<F> {
     pub fn acosh(self) -> Self {
         Self::from(Self::acosh_point(self.inf).inf).to(Self::acosh_point(self.sup).sup)
     }
+    fn atanh_point(x: F) -> Self {
+        let f_1 = F::one();
+        let f_2 = f_1 + f_1;
+        let f_0_5 = f_1 / f_2;
 
+        if x < -f_1 || f_1 < x {
+            panic!("the domain of atanh is between -1 and 1");
+        }
+        if x == -f_1 {
+            Self::from(-F::infinity()).to(F::min_value())
+        } else if x == f_1 {
+            Self::from(F::max_value()).to(F::infinity())
+        } else if x < -f_0_5 {
+            Self::new(f_0_5) * ((Self::new(f_1) + Self::new(x)) / (Self::new(f_1) - Self::new(x))).ln()
+        } else if x <= f_0_5 {
+            Self::new(f_0_5) * (Self::new(f_2) * Self::new(x) / (Self::new(f_1) - Self::new(x))).ln1p()
+        } else {
+            Self::new(f_0_5) * ((Self::new(f_1) + Self::new(x)) / (Self::new(f_1) - Self::new(x))).ln()
+        }
+    }
+    pub fn atanh(self) -> Self {
+        Self::from(Self::atanh_point(self.inf).inf).to(Self::atanh_point(self.sup).sup)
+    }
     pub fn pi() -> Self {
         let f_1 = Self::new(F::one());
         let f_2 = f_1 + f_1;
@@ -1123,6 +1145,12 @@ mod tests {
     fn acosh_interval() {
         let a = (Interval::from(1.0).to(25.0)).acosh();
         let b = Interval { inf: 0.0, sup: 3.911622765214589 };
+        assert_eq!(a, b);
+    }
+    #[test]
+    fn atanh_interval() {
+        let a = (Interval::from(-0.5).to(0.5)).atanh();
+        let b = Interval { inf: -0.5493061443340551, sup: 0.549306144334055 };
         assert_eq!(a, b);
     }
 }
